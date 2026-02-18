@@ -5,16 +5,24 @@ terraform {
       source  = "bpg/proxmox"
       version = "0.94.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.0"
+    }
   }
 }
 
-# When using enviroment variables we need to set the endopint. We
-# also need to set insecure to true if we are not using a valid certificate.
-# When using the variables option we should be able to define it in a secret
-# in Kubernetes. (updating with the next vCluster release.)
+# vCluster Platform injects node details into var.vcluster automatically at
+# runtime. You do not define this externally — it is provided by the Platform.
+variable "vcluster" {
+  type = any
+}
+
+# Credentials (PROXMOX_VE_ENDPOINT, PROXMOX_VE_USERNAME, PROXMOX_VE_PASSWORD or
+# PROXMOX_VE_API_TOKEN, PROXMOX_VE_INSECURE) are injected from the Kubernetes
+# Secret that has the label terraform.vcluster.com/provider matching the
+# NodeProvider name. No endpoint or credentials are hardcoded here.
 provider "proxmox" {
-  endpoint = "https://192.168.86.5:8006/"
-  insecure = true
   ssh {
     agent = true
   }
@@ -25,20 +33,20 @@ resource "random_string" "vm_name_suffix" {
   length  = 8
   special = false
   upper   = false
-  numeric  = true
+  numeric = true
 }
 
-# We need to create a cloud-config file to hold our UserData. Snippets 
+# We need to create a cloud-config file to hold our UserData. Snippets
 # need to be enabled on the datastore.
 resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
   node_name    = "ai"
 
-  # We are going to set the hostname of the VM here, this will be used 
+  # We are going to set the hostname of the VM here, this will be used
   # as the node name when it is checked in. Also, for testing we enable the
   # ubuntu user with ubuntu as the password so we can ssh/console. In production
-  # this should be disabledc and you would use an ssh-key.
+  # this should be disabled and you would use an ssh-key.
   source_raw {
     data = <<-EOT
       #cloud-config
@@ -51,6 +59,11 @@ resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
 
       ${replace(var.vcluster.userData, "#cloud-config", "")}
     EOT
+    # Note: replace() strips the "#cloud-config" header from the Platform-injected
+    # userData so the two cloud-config documents can be merged inline. This works
+    # for non-conflicting top-level keys; if both documents define the same key
+    # (e.g. runcmd), the last occurrence wins. Consider a proper cloud-init merge
+    # strategy if you need to combine runcmd or other list keys.
 
     # We give the filename a custom name so that we don't re-use the same file with the same
     # hostname. If it has the same hostname then it will join the node but it will run into issues
@@ -61,7 +74,7 @@ resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
 
 # Here we create the VM with vcluster- and the values we defined earlier.
 resource "proxmox_virtual_environment_vm" "ubuntu_vms" {
-  
+
   name      = "vcluster-${var.vcluster.nodeClaim.metadata.name}-${random_string.vm_name_suffix.result}"
   node_name = "ai"
 
@@ -82,9 +95,9 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vms" {
   # The nodetypes will be created in vCluster Platform when we create the provider.
   cpu {
     cores = var.vcluster.nodeType.spec.resources.cpu
-    type = "host"
+    type  = "host"
   }
-  
+
   # We specify Megabytes in vCluster Platform which will add an M to the amount, we need to trim that value
   # so that we get the correct value the provider expects.
   memory {
