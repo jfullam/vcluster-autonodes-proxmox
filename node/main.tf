@@ -17,6 +17,7 @@ terraform {
 # Secret that has the label terraform.vcluster.com/provider matching the
 # NodeProvider name. No endpoint or credentials are hardcoded here.
 provider "proxmox" {
+  insecure = true
   ssh {
     agent = true
   }
