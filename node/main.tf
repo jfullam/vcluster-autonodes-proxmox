@@ -103,7 +103,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vms" {
   # example we downloaded the noble-server image and uploaded it to the local datastore.
   # The VM itself will be installed on the local-lvm datastore.
   disk {
-    datastore_id = "local-lvm"
+    datastore_id = "local-zfs"
     file_id      = "local:iso/noble-server-cloudimg-amd64.img"
     interface    = "virtio0"
     iothread     = true
