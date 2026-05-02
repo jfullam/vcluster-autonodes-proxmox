@@ -12,12 +12,6 @@ terraform {
   }
 }
 
-# vCluster Platform injects node details into var.vcluster automatically at
-# runtime. You do not define this externally — it is provided by the Platform.
-variable "vcluster" {
-  type = any
-}
-
 # Credentials (PROXMOX_VE_ENDPOINT, PROXMOX_VE_USERNAME, PROXMOX_VE_PASSWORD or
 # PROXMOX_VE_API_TOKEN, PROXMOX_VE_INSECURE) are injected from the Kubernetes
 # Secret that has the label terraform.vcluster.com/provider matching the
