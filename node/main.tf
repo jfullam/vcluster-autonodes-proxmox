@@ -35,7 +35,7 @@ resource "random_string" "vm_name_suffix" {
 resource "proxmox_virtual_environment_file" "user_data_cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
-  node_name    = "ai"
+  node_name    = "pve.fullam.home"
 
   # We are going to set the hostname of the VM here, this will be used
   # as the node name when it is checked in. Also, for testing we enable the
