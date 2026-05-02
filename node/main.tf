@@ -77,6 +77,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vms" {
 
     # We tell the VM where the userdata is. It is using the ID of the file created above.
     user_data_file_id = proxmox_virtual_environment_file.user_data_cloud_config.id
+    datastore_id      = "local-zfs"
 
     # for this demo we just use DHCP, but you could configure static IP addresses if needed.
     ip_config {
@@ -101,7 +102,7 @@ resource "proxmox_virtual_environment_vm" "ubuntu_vms" {
 
   # This is where we specify the disk size and the cloud image to use. In this
   # example we downloaded the noble-server image and uploaded it to the local datastore.
-  # The VM itself will be installed on the local-lvm datastore.
+  # The VM itself will be installed on the local-zfs datastore.
   disk {
     datastore_id = "local-zfs"
     file_id      = "local:iso/noble-server-cloudimg-amd64.img"
